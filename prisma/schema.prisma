@@ -1,0 +1,61 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // A linha 'url' foi removida pois já está no seu prisma.config.ts
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("USER") // "ADMIN" ou "USER"
+  
+  // Configurações da Pasta Pública
+  folderName        String?  @default("Minha Pasta") 
+  folderCategory    String?  @default("Geral")       
+  folderDescription String? 
+  
+  materials Material[] 
+  displayOrder      Int      @default(999)
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+model Material {
+  id          String   @id @default(uuid())
+  title       String
+  type        String   // "FOLDER" ou extensão do arquivo (PDF, PNG...)
+  
+  fileUrl     String?  // Pode ser nulo se for uma pasta
+  size        Int      @default(0)
+  
+  // Relação de Subpastas (Auto-relacionamento)
+  parentId    String?  
+  parent      Material?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children    Material[] @relation("FolderHierarchy")
+
+  // Dono
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
+
+  @@map("materials")
+}
+
+model Partner {
+  id        String   @id @default(uuid())
+  name      String
+  logoUrl   String?
+  website   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("partners")
+}

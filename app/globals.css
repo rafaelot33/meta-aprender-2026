@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  /* --- Paleta de Cores --- */
+  --color-deepBlue: #0A192F;
+  --color-vibrantPurple: #9C27B0;
+  --color-cyanBright: #00D4FF;
+  --color-textGray: #E0E0E0;
+
+  /* --- Fontes (conectadas ao Next/Font) --- */
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-oswald);
+
+  /* --- Gradientes Personalizados --- */
+  --image-hero-gradient: linear-gradient(to right, #0A192F, #240b36);
+  --image-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+
+  /* --- Sombras Neon --- */
+  --shadow-neon-cyan: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.3);
+  --shadow-neon-purple: 0 0 10px rgba(156, 39, 176, 0.5), 0 0 20px rgba(156, 39, 176, 0.3);
+}
+
+/* Configurações Globais */
+body {
+  background-color: var(--color-deepBlue);
+  color: white;
+  font-family: var(--font-sans);
+}
+
+html, body {
+  overflow-x: hidden; /* Impede rolagem lateral indesejada */
+}
