@@ -42,5 +42,4 @@ next-env.d.ts
 
 /app/generated/prisma
 
-/storage/uploads
-/storage/backups
+storage/

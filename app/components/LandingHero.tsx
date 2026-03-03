@@ -19,8 +19,11 @@ export default function LandingHero() {
 
   // Logos dos parceiros (Simulados - você pode trocar pelas imagens reais depois)
   const partners = [
-    "Jesuita Guedes", "Dennys Angelim", "Lyandra Gomes", 
-    "Adamara Marques", "Educa+", "Future Learning", "Alpha Beta"
+    "Jesuita Guedes", "Dennys Angelim", "Lyandra Alves", 
+    "Adamara Ramalho", "Aline Oliveira", "Carlos Gabriel", 
+    "Fernanda Aprigio", "Gicelia Santos", "Maria José",
+    "Nicodemos Oliveira", "Shirley Valéria", "Suênia Santos",
+    "Jean Pierre", "Rubênia Alves"
   ];
 
   return (
@@ -115,7 +118,7 @@ export default function LandingHero() {
         <motion.div 
           className="flex gap-16 whitespace-nowrap w-max"
           animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 40, ease: "linear", repeat: Infinity }}
+          transition={{ duration: 90, ease: "linear", repeat: Infinity }}
         >
           {/* Duplicamos a lista para criar o efeito infinito */}
           {[...partners, ...partners, ...partners, ...partners].map((partner, i) => (
