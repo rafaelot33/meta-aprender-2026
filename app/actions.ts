@@ -416,3 +416,45 @@ export async function moveUserOrder(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin/users");
 }
+
+// --- CRIAR PASTA OU LINK ---
+export async function createMaterial(formData: FormData) {
+  const session = await getServerSession();
+  if (!session?.user?.email) throw new Error("Login necessário");
+
+  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  if (!user) throw new Error("Usuário não encontrado");
+
+  const title = formData.get("title") as string;
+  const type = formData.get("type") as string; // 'FOLDER' ou 'LINK'
+  const fileUrl = formData.get("fileUrl") as string | null;
+  
+  const rawParentId = formData.get("parentId") as string;
+  const parentId = (rawParentId === "" || rawParentId === "root") ? null : rawParentId;
+  
+  let targetUserId = user.id;
+
+  if (parentId) {
+     const parent = await prisma.material.findUnique({ where: { id: parentId } });
+     if (parent) targetUserId = parent.userId;
+  } else {
+     const formTargetId = formData.get("targetUserId") as string;
+     if (formTargetId) targetUserId = formTargetId;
+  }
+
+  if (user.id !== targetUserId && user.role !== 'ADMIN') {
+      throw new Error("Sem permissão para modificar esta pasta.");
+  }
+
+  await prisma.material.create({
+    data: {
+      title,
+      type: type === 'LINK' ? 'LINK' : 'FOLDER',
+      fileUrl: type === 'LINK' ? fileUrl : null,
+      userId: targetUserId,
+      parentId: parentId,
+    }
+  });
+
+  revalidatePath("/admin/dashboard");
+}
