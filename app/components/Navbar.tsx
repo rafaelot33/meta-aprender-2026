@@ -41,7 +41,7 @@ export default function Navbar() {
               alt="Logo Meta Aprender" 
               width={200} 
               height={80} 
-              className="w-auto h-8 md:h-[100px] object-contain transition-transform duration-300 group-hover:scale-105 brightness-0 invert"
+              className="w-auto h-8 md:h-24 object-contain transition-transform duration-300 group-hover:scale-105 brightness-0 invert"
               priority
             />
           </Link>
