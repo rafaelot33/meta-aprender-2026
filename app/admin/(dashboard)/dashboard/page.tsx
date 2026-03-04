@@ -44,12 +44,11 @@ export default async function DashboardPage(props: PageProps) {
   const showUserList = isAdmin && !currentFolderId && !viewUserId;
 
   // CRUCIAL: Definir quem é o dono dos arquivos que estamos vendo
-  // Se for Admin vendo outro user, usa o viewUserId. Senão, usa o próprio ID.
   const targetUserId = (isAdmin && viewUserId) ? viewUserId : loggedUser.id;
 
   // Busca Conteúdo
-  let materials = [];
-  let usersList = [];
+  let materials: any[] = [];
+  let usersList: any[] = [];
 
   if (showUserList) {
     // Admin vendo a lista de usuários
@@ -62,10 +61,19 @@ export default async function DashboardPage(props: PageProps) {
       where: { 
         userId: targetUserId, 
         parentId: currentFolderId 
-      },
-      orderBy: { type: 'asc' }
+      }
     });
   }
+
+  // --- LÓGICA DE ORGANIZAÇÃO INTELIGENTE ---
+  const sortedMaterials = materials.sort((a, b) => {
+    if (a.type === 'FOLDER' && b.type !== 'FOLDER') return -1;
+    if (a.type !== 'FOLDER' && b.type === 'FOLDER') return 1;
+    if (a.type === 'LINK' && b.type !== 'LINK') return -1;
+    if (a.type !== 'LINK' && b.type === 'LINK') return 1;
+    if (a.type === b.type) return a.title.localeCompare(b.title);
+    return a.type.localeCompare(b.type);
+  });
 
   // Busca Pastas para o Dropdown "Mover Para"
   const allFolders = await prisma.material.findMany({
@@ -124,7 +132,7 @@ export default async function DashboardPage(props: PageProps) {
           </div>
         </div>
 
-        {/* Botão de Backup (Só aparece na raiz de arquivos) */}
+        {/* Botão de Backup */}
         {!showUserList && !currentFolderId && (
             <BackupButton />
         )}
@@ -167,10 +175,10 @@ export default async function DashboardPage(props: PageProps) {
                     </form>
                 </div>
                 
-                {/* 2. Upload Arquivo (Componente Novo) */}
+                {/* 2. Upload Arquivo */}
                 <UploadForm parentId={currentFolderId} targetUserId={targetUserId} />
 
-                {/* 3. Criar Link (Novo) */}
+                {/* 3. Criar Link */}
                 <div className="bg-[#1E293B] p-4 rounded-xl border border-white/5">
                      <form action={createLink} className="flex gap-2 items-center">
                         <input type="hidden" name="parentId" value={currentFolderId || ""} />
@@ -184,9 +192,9 @@ export default async function DashboardPage(props: PageProps) {
                 </div>
             </div>
 
-            {/* Lista de Materiais */}
+            {/* Lista de Materiais Organizada */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {materials.map((item) => (
+                {sortedMaterials.map((item) => (
                 <div key={item.id} className="group bg-[#0F172A] border border-white/10 p-3 rounded-xl flex items-center justify-between hover:border-cyanBright/30 transition-all">
                     
                     <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
@@ -196,7 +204,6 @@ export default async function DashboardPage(props: PageProps) {
                              <FileIcon filename={item.title} className="w-8 h-8" />}
                         </div>
                         <div className="truncate pr-2 w-full">
-                            {/* Link condicional: Pasta abre interna, Link abre externo, Arquivo abre preview */}
                             {item.type === 'FOLDER' ? (
                                 <Link 
                                     href={`/admin/dashboard?folder=${item.id}${viewUserId ? `&viewUser=${viewUserId}` : ""}`} 
@@ -220,16 +227,11 @@ export default async function DashboardPage(props: PageProps) {
                     </div>
 
                     <div className="flex items-center gap-1">
-                        {/* Botão Mover */}
                         <MoveButton 
                             itemId={item.id} 
                             folders={allFolders.filter(f => f.id !== item.id)} 
                         />
-                        
-                        {/* Botão Renomear (Novo) */}
                         <RenameButton itemId={item.id} currentName={item.title} />
-
-                        {/* Botão Excluir */}
                         <form action={deleteMaterial.bind(null, item.id)}>
                             <button className="text-red-400 hover:text-red-500 bg-[#1E293B] p-2 rounded-lg border border-white/5 hover:bg-red-500/10 transition-colors">
                             <Trash2 className="w-4 h-4" />
@@ -240,7 +242,7 @@ export default async function DashboardPage(props: PageProps) {
                 </div>
                 ))}
                 
-                {materials.length === 0 && (
+                {sortedMaterials.length === 0 && (
                     <div className="col-span-full py-10 text-center text-gray-500 border border-dashed border-gray-700 rounded-xl">
                         Pasta vazia.
                     </div>
