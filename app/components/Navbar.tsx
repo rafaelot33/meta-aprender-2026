@@ -44,7 +44,7 @@ export default function Navbar() {
               // A MÁGICA ACONTECE AQUI:
               // Travamos a largura em 140px no celular e 200px no computador.
               // O h-auto garante que ela nunca vai achatar ou esticar.
-              className="w-[140px] md:w-[190px] h-auto object-contain transition-transform duration-300 group-hover:scale-105 brightness-0 invert"
+              className="w-[140px] md:w-[180px] h-auto object-contain transition-transform duration-300 group-hover:scale-105 brightness-0 invert"
               priority
             />
           </Link>
