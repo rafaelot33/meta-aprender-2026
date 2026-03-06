@@ -57,8 +57,8 @@ export default function SettingsForm({ user }: { user: any }) {
               <option value="5º Ano">5º Ano</option>
               <option value="4/5º Ano">4/5º Ano</option>
               <option value="Sistemas">Sistemas</option>
-              <option value="Tecnologia">Tecnologia</option>
-              <option value="Inclusão">Inclusão</option>
+              <option value="1/2º Ano">1/2º Ano</option>
+              <option value="Campo">Campo</option>
             </select>
           </div>
 
