@@ -91,7 +91,7 @@ export default function Showcase({ folders }: { folders: any[] }) {
     }
   };
 
-  const smoothTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
+  const smoothTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] };
 
   return (
     <>
