@@ -22,18 +22,22 @@ export default async function Home() {
     })
   }));
 
-  const foldersData = usersWithFolders.map(user => ({
-    id: user.id,
-    name: user.folderName || user.name || "Pasta Sem Nome", 
-    creatorName: user.name || "Desconhecido",
-    folderCategory: user.folderCategory || "Geral", 
-    creatorDescription: user.folderDescription || user.description || "Nenhuma descrição informada.",
-    materials: user.materials, 
-    numMaterials: user.materials.length,
-    numSubscribers: Math.floor(Math.random() * 50) + 5, 
-    downloads: Math.floor(Math.random() * 200) + 15,
-  }));
-
+  const foldersData = usersWithFolders.map(user => {
+    // Transformamos em 'any' para o TypeScript não barrar a leitura de colunas personalizadas
+    const u = user as any; 
+    
+    return {
+      id: u.id,
+      name: u.folderName || u.name || "Pasta Sem Nome", 
+      creatorName: u.name || "Desconhecido",
+      folderCategory: u.folderCategory || "Geral", 
+      creatorDescription: u.folderDescription || u.description || "Nenhuma descrição informada.",
+      materials: u.materials, 
+      numMaterials: u.materials?.length || 0,
+      numSubscribers: Math.floor(Math.random() * 50) + 5, 
+      downloads: Math.floor(Math.random() * 200) + 15,
+    };
+  });
   return (
     // MÁGICA AQUI: h-screen e overflow-hidden para travar a tela e impedir de rolar para baixo!
     <main className="bg-black h-screen overflow-hidden selection:bg-[#10B981]/10 selection:text-white">
