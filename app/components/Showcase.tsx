@@ -200,7 +200,7 @@ export default function Showcase({ folders }: { folders: any[] }) {
                 transition={{ type: "spring", stiffness: 160, damping: 22 }}
                 style={{ backfaceVisibility: "hidden", boxShadow: "0 20px 50px -10px rgba(0,0,0,0.5)" }}
               >
-                <Image src={card.img} width={375} height={600} alt={card.title} className="w-[200px] sm:w-[260px] lg:w-[280px] xl:w-[300px] 2xl:w-[340px] h-auto object-cover rounded-[20px] md:rounded-3xl" />
+                <Image src={card.img} width={375} height={600} alt={card.title} unoptimized className="w-[200px] sm:w-[260px] lg:w-[280px] xl:w-[300px] 2xl:w-[340px] h-auto object-cover rounded-[20px] md:rounded-3xl" />
               </motion.div>
             );
           })}
@@ -211,7 +211,7 @@ export default function Showcase({ folders }: { folders: any[] }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
                   {CARDS.map((card, idx) => (
                     <motion.div layoutId={`card-${card.id}`} key={`grid-${card.id}`} onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); setViewMode("stack"); }} className="cursor-pointer hover:scale-105 transition-transform flex justify-center">
-                      <Image src={card.img} width={375} height={600} alt={card.title} className="w-[240px] sm:w-full h-auto rounded-3xl shadow-2xl" />
+                      <Image src={card.img} width={375} height={600} alt={card.title} unoptimized className="w-[240px] sm:w-full h-auto rounded-3xl shadow-2xl" />
                     </motion.div>
                   ))}
                 </div>
