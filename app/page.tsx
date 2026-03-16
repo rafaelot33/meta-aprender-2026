@@ -1,58 +1,47 @@
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import LandingHero from "./components/LandingHero";
-import Partners from "./components/Partners";
-import Materials from "./components/Materials";
+import Showcase from "./components/Showcase";
 import { prisma } from "./lib/prisma";
 
-// Garante que a Landing Page mostre os arquivos novos na mesma hora (Sem Cache)
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   
-  // Busca os usuários e os materiais brutos no banco
   const rawUsersWithFolders = await prisma.user.findMany({
     orderBy: { displayOrder: 'asc' }, 
     include: { materials: { where: { parentId: null } } }
   });
 
-  // Aplica a Organização Inteligente nos materiais antes de mandar para a tela
   const usersWithFolders = rawUsersWithFolders.map(user => ({
     ...user,
     materials: user.materials.sort((a, b) => {
-      // 1. Pastas primeiro
       if (a.type === 'FOLDER' && b.type !== 'FOLDER') return -1;
       if (a.type !== 'FOLDER' && b.type === 'FOLDER') return 1;
-
-      // 2. Links em seguida (Opcional, mas mantém organizado)
       if (a.type === 'LINK' && b.type !== 'LINK') return -1;
-      if (a.type !== 'LINK' && b.type === 'LINK') return 1;
-
-      // 3. Se for do mesmo tipo (Duas pastas, ou dois PDFs), desempata por ordem alfabética
-      if (a.type === b.type) {
-        return a.title.localeCompare(b.title);
-      }
-
-      // 4. Se forem arquivos diferentes (PDF e JPG), agrupa pelo tipo em ordem alfabética
+      if (a.type === 'LINK' && b.type === 'LINK') return 1;
+      if (a.type === b.type) return a.title.localeCompare(b.title);
       return a.type.localeCompare(b.type);
     })
   }));
 
+  const foldersData = usersWithFolders.map(user => ({
+    id: user.id,
+    name: user.folderName || user.name || "Pasta Sem Nome", 
+    creatorName: user.name || "Desconhecido",
+    folderCategory: user.folderCategory || "Geral", 
+    creatorDescription: user.folderDescription || user.description || "Nenhuma descrição informada.",
+    materials: user.materials, 
+    numMaterials: user.materials.length,
+    numSubscribers: Math.floor(Math.random() * 50) + 5, 
+    downloads: Math.floor(Math.random() * 200) + 15,
+  }));
+
   return (
-    <main className="bg-[#020617] min-h-screen text-white selection:bg-cyanBright selection:text-black overflow-x-hidden">
+    // MÁGICA AQUI: h-screen e overflow-hidden para travar a tela e impedir de rolar para baixo!
+    <main className="bg-black h-screen overflow-hidden selection:bg-[#10B981]/10 selection:text-white">
       
-      <Navbar />
-
-      {/* 1. Hero Interativo (Mouse Follow + Slogan) */}
-      <LandingHero />
-
-      {/* 2. Faixa de Parceiros (Conecta o Hero ao Conteúdo) */}
-      <Partners />
-
-      {/* 3. Acervo Digital (Design Escuro Unificado) */}
-      <Materials folders={usersWithFolders} />
+      {/* Agora a Vitrine é a ÚNICA coisa na página inicial */}
+      <Showcase folders={foldersData} />
       
-      <Footer />
+      {/* Removemos a div de Materiais daqui, porque ela já existe dentro do Modal do Showcase! */}
       
     </main>
   );
