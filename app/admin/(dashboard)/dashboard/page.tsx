@@ -1,23 +1,14 @@
 import { prisma } from "../../../lib/prisma";
 import { getServerSession } from "next-auth";
-import { Upload, FolderPlus, Folder, FileText, ArrowLeft, Trash2, Home, FolderOpen, ArrowRightLeft, User, ShieldAlert, Link as LinkIcon, Archive } from "lucide-react";
-import { createFolder, deleteMaterial, moveMaterial, createLink } from "@/app/actions"; 
+import { Upload, FolderPlus, Folder, ArrowLeft, Home, FolderOpen, User, Link as LinkIcon } from "lucide-react";
+import { createFolder, createLink } from "@/app/actions"; 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import UploadForm from "./UploadForm"; 
-import MoveButton from "./MoveButton";
-import RenameButton from "./RenameButton"; 
 import BackupButton from "./BackupButton"; 
-import FileIcon from "@/app/components/FileIcon";
 
-// Helpers
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
+// Importa o novo componente que lida com a lista interativa (que criaremos logo abaixo no mesmo arquivo)
+import InteractiveFileList from "./InteractiveFileList";
 
 interface PageProps {
   searchParams: Promise<{ folder?: string; viewUser?: string }>;
@@ -32,31 +23,24 @@ export default async function DashboardPage(props: PageProps) {
 
   if (!session?.user?.email) redirect("/admin/login");
 
-  // Busca dados do Usuário Logado
   const loggedUser = await prisma.user.findUnique({
     where: { email: session.user.email },
   });
 
   if (!loggedUser) return <div>Erro de sessão</div>;
 
-  // --- LÓGICA DE ADMINISTRAÇÃO ---
   const isAdmin = loggedUser.role === 'ADMIN';
   const showUserList = isAdmin && !currentFolderId && !viewUserId;
-
-  // CRUCIAL: Definir quem é o dono dos arquivos que estamos vendo
   const targetUserId = (isAdmin && viewUserId) ? viewUserId : loggedUser.id;
 
-  // Busca Conteúdo
   let materials: any[] = [];
   let usersList: any[] = [];
 
   if (showUserList) {
-    // Admin vendo a lista de usuários
     usersList = await prisma.user.findMany({
         where: { id: { not: loggedUser.id } } 
     });
   } else {
-    // Vendo arquivos
     materials = await prisma.material.findMany({
       where: { 
         userId: targetUserId, 
@@ -65,7 +49,6 @@ export default async function DashboardPage(props: PageProps) {
     });
   }
 
-  // --- LÓGICA DE ORGANIZAÇÃO INTELIGENTE ---
   const sortedMaterials = materials.sort((a, b) => {
     if (a.type === 'FOLDER' && b.type !== 'FOLDER') return -1;
     if (a.type !== 'FOLDER' && b.type === 'FOLDER') return 1;
@@ -75,7 +58,6 @@ export default async function DashboardPage(props: PageProps) {
     return a.type.localeCompare(b.type);
   });
 
-  // Busca Pastas para o Dropdown "Mover Para"
   const allFolders = await prisma.material.findMany({
     where: { 
         userId: targetUserId, 
@@ -84,7 +66,6 @@ export default async function DashboardPage(props: PageProps) {
     }
   });
 
-  // Breadcrumb info
   let currentFolderName = "Raiz";
   let parentOfCurrent = null;
   if (currentFolderId) {
@@ -95,15 +76,12 @@ export default async function DashboardPage(props: PageProps) {
      currentFolderName = `Arquivos de ${u?.name}`;
   }
 
-  // --- RENDERIZAÇÃO ---
   return (
     <div className="space-y-6 pb-20">
       
       {/* Cabeçalho */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-[#1E293B] p-4 rounded-xl border border-white/5 gap-4">
         <div className="flex items-center gap-4 w-full md:w-auto">
-          
-          {/* Botão Voltar */}
           {currentFolderId ? (
             <Link 
               href={`/admin/dashboard?folder=${parentOfCurrent || ""}${viewUserId ? `&viewUser=${viewUserId}` : ""}`} 
@@ -132,13 +110,12 @@ export default async function DashboardPage(props: PageProps) {
           </div>
         </div>
 
-        {/* Botão de Backup */}
         {!showUserList && !currentFolderId && (
             <BackupButton />
         )}
       </div>
 
-      {/* --- MODO LISTA DE USUÁRIOS (ADMIN) --- */}
+      {/* MODO LISTA DE USUÁRIOS (ADMIN) */}
       {showUserList ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link href={`/admin/dashboard?viewUser=${loggedUser.id}`} className="bg-vibrantPurple p-6 rounded-xl flex items-center gap-4 hover:opacity-90 transition-all shadow-lg">
@@ -161,11 +138,8 @@ export default async function DashboardPage(props: PageProps) {
         </div>
       ) : (
         <>
-            {/* --- MODO ARQUIVOS (NORMAL) --- */}
-            
             {/* Ações (Grid Responsivo) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* 1. Criar Pasta */}
                 <div className="bg-[#1E293B] p-4 rounded-xl border border-white/5">
                     <form action={createFolder} className="flex gap-2">
                         <input type="hidden" name="parentId" value={currentFolderId || ""} />
@@ -175,10 +149,8 @@ export default async function DashboardPage(props: PageProps) {
                     </form>
                 </div>
                 
-                {/* 2. Upload Arquivo */}
                 <UploadForm parentId={currentFolderId} targetUserId={targetUserId} />
 
-                {/* 3. Criar Link */}
                 <div className="bg-[#1E293B] p-4 rounded-xl border border-white/5">
                      <form action={createLink} className="flex gap-2 items-center">
                         <input type="hidden" name="parentId" value={currentFolderId || ""} />
@@ -192,62 +164,12 @@ export default async function DashboardPage(props: PageProps) {
                 </div>
             </div>
 
-            {/* Lista de Materiais Organizada */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedMaterials.map((item) => (
-                <div key={item.id} className="group bg-[#0F172A] border border-white/10 p-3 rounded-xl flex items-center justify-between hover:border-cyanBright/30 transition-all">
-                    
-                    <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
-                        <div className="shrink-0">
-                            {item.type === 'FOLDER' ? <Folder className="w-8 h-8 text-yellow-500" /> : 
-                             item.type === 'LINK' ? <LinkIcon className="w-8 h-8 text-green-400" /> :
-                             <FileIcon filename={item.title} className="w-8 h-8" />}
-                        </div>
-                        <div className="truncate pr-2 w-full">
-                            {item.type === 'FOLDER' ? (
-                                <Link 
-                                    href={`/admin/dashboard?folder=${item.id}${viewUserId ? `&viewUser=${viewUserId}` : ""}`} 
-                                    className="text-white font-bold hover:underline block truncate text-sm"
-                                >
-                                    {item.title}
-                                </Link>
-                            ) : (
-                                <a 
-                                    href={item.fileUrl!} 
-                                    target="_blank" 
-                                    className="text-white font-medium hover:underline block truncate text-sm"
-                                >
-                                    {item.title}
-                                </a>
-                            )}
-                            <span className="text-[10px] text-gray-500 block">
-                                {item.type === 'FOLDER' ? 'Pasta' : item.type === 'LINK' ? 'Link Externo' : formatBytes(item.size)}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <MoveButton 
-                            itemId={item.id} 
-                            folders={allFolders.filter(f => f.id !== item.id)} 
-                        />
-                        <RenameButton itemId={item.id} currentName={item.title} />
-                        <form action={deleteMaterial.bind(null, item.id)}>
-                            <button className="text-red-400 hover:text-red-500 bg-[#1E293B] p-2 rounded-lg border border-white/5 hover:bg-red-500/10 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                            </button>
-                        </form>
-                    </div>
-
-                </div>
-                ))}
-                
-                {sortedMaterials.length === 0 && (
-                    <div className="col-span-full py-10 text-center text-gray-500 border border-dashed border-gray-700 rounded-xl">
-                        Pasta vazia.
-                    </div>
-                )}
-            </div>
+            {/* AQUI ESTÁ A GRANDE MUDANÇA: Passamos a lista de arquivos para um componente Cliente que sabe abrir Modais! */}
+            <InteractiveFileList 
+              materials={sortedMaterials} 
+              allFolders={allFolders} 
+              viewUserId={viewUserId} 
+            />
         </>
       )}
     </div>

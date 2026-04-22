@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Upload, FileText, X, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB em bytes
+const MAX_FILE_SIZE = 45 * 1024 * 1024; // 45 MB em bytes
 
 export default function UploadForm({ parentId, targetUserId }: { parentId: string | null, targetUserId: string }) {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
@@ -27,7 +27,7 @@ export default function UploadForm({ parentId, targetUserId }: { parentId: strin
       const totalSize = Array.from(e.target.files).reduce((acc, file) => acc + file.size, 0);
 
       if (totalSize > MAX_FILE_SIZE) {
-        setFileError(`Tamanho excedido! Limite de 25MB. (Total selecionado: ${(totalSize / (1024 * 1024)).toFixed(1)}MB)`);
+        setFileError(`Tamanho excedido! Limite de 45MB. (Total selecionado: ${(totalSize / (1024 * 1024)).toFixed(1)}MB)`);
         setSelectedFiles(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {

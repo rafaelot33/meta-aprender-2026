@@ -4,10 +4,10 @@ const nextConfig: NextConfig = {
   experimental: {
     // 1. Libera a trava de 1MB das Server Actions
     serverActions: {
-      bodySizeLimit: '25mb', 
+      bodySizeLimit: '45mb', 
     },
     // 2. Libera a trava de 10MB do Proxy/Turbopack do servidor
-    proxyClientMaxBodySize: '25mb',
+    proxyClientMaxBodySize: '45mb',
   },
   images: {
     remotePatterns: [

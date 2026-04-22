@@ -1,7 +1,10 @@
 import Showcase from "./components/Showcase";
 import { prisma } from "./lib/prisma";
 
+// AS TRÊS LINHAS MÁGICAS QUE DESLIGAM O CACHE DA LANDING PAGE:
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export default async function Home() {
   
@@ -38,14 +41,13 @@ export default async function Home() {
       downloads: Math.floor(Math.random() * 200) + 15,
     };
   });
+
   return (
     // MÁGICA AQUI: h-screen e overflow-hidden para travar a tela e impedir de rolar para baixo!
     <main className="bg-black h-screen overflow-hidden selection:bg-[#10B981]/10 selection:text-white">
       
       {/* Agora a Vitrine é a ÚNICA coisa na página inicial */}
       <Showcase folders={foldersData} />
-      
-      {/* Removemos a div de Materiais daqui, porque ela já existe dentro do Modal do Showcase! */}
       
     </main>
   );
