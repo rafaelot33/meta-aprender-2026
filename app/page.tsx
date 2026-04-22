@@ -1,13 +1,14 @@
 import Showcase from "./components/Showcase";
+import BookCatalog from "./components/BookCatalog"; // <-- 1. IMPORTAMOS O NOVO COMPONENTE
 import { prisma } from "./lib/prisma";
 
-// AS TRÊS LINHAS MÁGICAS QUE DESLIGAM O CACHE DA LANDING PAGE:
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 export default async function Home() {
   
+  // Busca os dados das Pastas e Usuários (O que já existia)
   const rawUsersWithFolders = await prisma.user.findMany({
     orderBy: { displayOrder: 'asc' }, 
     include: { materials: { where: { parentId: null } } }
@@ -26,9 +27,7 @@ export default async function Home() {
   }));
 
   const foldersData = usersWithFolders.map(user => {
-    // Transformamos em 'any' para o TypeScript não barrar a leitura de colunas personalizadas
     const u = user as any; 
-    
     return {
       id: u.id,
       name: u.folderName || u.name || "Pasta Sem Nome", 
@@ -42,12 +41,18 @@ export default async function Home() {
     };
   });
 
+  // 2. BUSCA TODOS OS LIVROS CADASTRADOS NO BANCO DE DADOS
+  const allBooks = await prisma.book.findMany({
+    orderBy: { createdAt: 'desc' }
+  });
+
   return (
-    // MÁGICA AQUI: h-screen e overflow-hidden para travar a tela e impedir de rolar para baixo!
-    <main className="bg-black h-screen overflow-hidden selection:bg-[#10B981]/10 selection:text-white">
+    // ATENÇÃO AQUI: Como agora temos a Vitrine e os Livros, precisamos tirar o "h-screen overflow-hidden"
+    // para que a pessoa possa rolar a página para baixo e ver os livros!
+    <main className="bg-black min-h-screen selection:bg-[#10B981]/10 selection:text-white">
       
-      {/* Agora a Vitrine é a ÚNICA coisa na página inicial */}
-      <Showcase folders={foldersData} />
+      {/* Agora passamos tanto os folders quanto os books para o Showcase */}
+      <Showcase folders={foldersData} books={allBooks} />
       
     </main>
   );

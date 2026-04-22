@@ -11,10 +11,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/admin/login");
   }
 
-  // Busca dados para a barra de progresso
+  // Busca dados para a barra de progresso E a role do usuário
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { id: true }
+    select: { id: true, role: true } // <-- ADICIONAMOS A 'role' AQUI
   });
 
   if (!user) return null;
@@ -25,7 +25,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   });
 
   const totalUsed = aggregation._sum.size || 0;
-  // const maxStorage = 5 * 1024 * 1024 * 1024; // 5GB - Mantido para cálculo
   
   // Cálculo de porcentagem visual
   const maxStorage = 5 * 1024 * 1024 * 1024;
@@ -38,17 +37,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-white overflow-hidden">
-      {/* Sidebar */}
       <AutoLogout />
+      
+      {/* Passando a informação de Admin para o Sidebar */}
       <Sidebar 
         usagePercent={percentage} 
-        
         usageText={`${formatBytes(totalUsed)} / 5 GB`} 
+        isAdmin={user.role === 'ADMIN'} // <-- ADICIONAMOS A VERIFICAÇÃO AQUI
       />
       
       {/* Área Principal - Ocupa toda a largura disponível */}
       <main className="flex-1 overflow-y-auto w-full relative bg-[#0f172a]">
-        {/* Removemos max-w-7xl e mx-auto para ocupar tudo. Adicionamos padding responsivo. */}
         <div className="p-4 md:p-6 lg:p-8 pb-20 w-full h-full">
            {children}
         </div>

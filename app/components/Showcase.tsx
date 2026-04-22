@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, X, Copy, LayoutGrid } from "lucide-react";
 import Materials from "./Materials"; 
+import BookCatalog from "./BookCatalog";
 import { Poppins } from "next/font/google";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "700"] });
@@ -17,7 +18,7 @@ const CARDS = [
   { id: "jogos", title: "Jogos", color: "#EF4444", img: "/cards/4.png" }, 
 ];
 
-export default function Showcase({ folders }: { folders: any[] }) {
+export default function Showcase({ folders, books }: { folders: any[], books: any[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoverState, setHoverState] = useState<"left" | "right" | "none">("none");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -237,7 +238,11 @@ export default function Showcase({ folders }: { folders: any[] }) {
               </div>
 
               <div className="flex-1 overflow-y-auto bg-white p-4 sm:p-6 md:p-10">
-                {currentCard.id === "materiais" ? <Materials folders={folders} /> : (
+                {currentCard.id === "materiais" ? (
+                  <Materials folders={folders} />
+                ) : currentCard.id === "livros" ? (
+                  <BookCatalog books={books} /> // <-- QUANDO CLICA EM LIVROS, ABRE O CATÁLOGO BRANCO!
+                ) : (
                   <div className="w-full h-full min-h-[40vh] flex flex-col items-center justify-center text-gray-400">
                     <Image src={currentCard.img} width={150} height={250} alt="Breve" className="mb-6 opacity-50 grayscale rounded-2xl shadow-lg w-[100px] md:w-[150px]" />
                     <p className="text-xl md:text-2xl font-bold text-center">Conteúdo de {currentCard.title} em breve...</p>

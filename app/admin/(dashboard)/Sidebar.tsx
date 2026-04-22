@@ -4,21 +4,31 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Users, LogOut, Settings, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Settings, Menu, X, BookOpen } from "lucide-react";
 
-export default function Sidebar({ usagePercent, usageText }: { usagePercent: number, usageText: string }) {
+export default function Sidebar({ 
+  usagePercent, 
+  usageText, 
+  isAdmin // <-- NOVA PROPRIEDADE PARA CONTROLE DE ACESSO
+}: { 
+  usagePercent: number; 
+  usageText: string; 
+  isAdmin: boolean; 
+}) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false); // Controle do Menu Mobile
+  const [isOpen, setIsOpen] = useState(false);
 
+  // Mapeamento do menu com controle de exibição (show)
   const menuItems = [
-    { name: "Visão Geral", icon: LayoutDashboard, href: "/admin/dashboard" },
-    { name: "Usuários", icon: Users, href: "/admin/users" }, // Rota para gestão de usuários
-    { name: "Configurações", icon: Settings, href: "/admin/settings" },
-  ];
+    { name: "Visão Geral", icon: LayoutDashboard, href: "/admin/dashboard", show: true },
+    { name: "Usuários", icon: Users, href: "/admin/users", show: isAdmin },
+    { name: "Catálogo de Livros", icon: BookOpen, href: "/admin/books", show: isAdmin }, // <-- NOVA ABA
+    { name: "Configurações", icon: Settings, href: "/admin/settings", show: true },
+  ].filter(item => item.show); // Remove os itens que o usuário não pode ver
 
   return (
     <>
-      {/* --- BOTÃO MOBILE (Só aparece no celular) --- */}
+      {/* --- BOTÃO MOBILE --- */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="md:hidden fixed top-4 right-4 z-50 p-2 bg-vibrantPurple rounded-lg text-white shadow-lg"
@@ -26,7 +36,7 @@ export default function Sidebar({ usagePercent, usageText }: { usagePercent: num
         {isOpen ? <X /> : <Menu />}
       </button>
 
-      {/* --- OVERLAY ESCURO (Para fechar ao clicar fora no celular) --- */}
+      {/* --- OVERLAY ESCURO --- */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
@@ -51,12 +61,12 @@ export default function Sidebar({ usagePercent, usageText }: { usagePercent: num
         {/* Links */}
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname.startsWith(item.href) && (item.href !== "/admin/dashboard" || pathname === "/admin/dashboard");
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setIsOpen(false)} // Fecha ao clicar no link (mobile)
+                onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isActive
                     ? "bg-vibrantPurple text-white shadow-lg shadow-vibrantPurple/20"

@@ -25,6 +25,8 @@ model User {
   createdAt DateTime @default(now())
 
   @@map("users")
+
+  books Book[]
 }
 
 model Material {
@@ -58,4 +60,19 @@ model Partner {
   createdAt DateTime @default(now())
 
   @@map("partners")
+}
+
+model Book {
+  id            String   @id @default(uuid())
+  title         String
+  category      String   // Ex: "1º Ano", "Sistemas"
+  subCategory   String?  // Opcional. Ex: "Professor", "Aluno"
+  coverUrl      String   // Caminho onde a imagem da capa será salva
+  type          String   // Vai ser 'FILE' (arquivo anexo) ou 'LINK' (livro online)
+  contentUrl    String   // Se for FILE, salva o caminho. Se for LINK, salva a URL do site.
+  createdAt     DateTime @default(now())
+  
+  // Quem cadastrou o livro
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -458,3 +458,109 @@ export async function createMaterial(formData: FormData) {
 
   revalidatePath("/admin/dashboard");
 }
+
+export async function createBook(formData: FormData) {
+  const title = formData.get("title") as string;
+  const category = formData.get("category") as string;
+  const subCategory = formData.get("subCategory") as string;
+  const type = formData.get("type") as string; // 'FILE' ou 'LINK'
+  const userId = formData.get("userId") as string;
+  
+  const coverFile = formData.get("cover") as File;
+  const contentFile = formData.get("contentFile") as File;
+  const contentLink = formData.get("contentLink") as string;
+
+  try {
+    // 1. Processar a Capa (public/uploads/covers)
+    const coverName = `${Date.now()}-${coverFile.name.replace(/\s/g, "_")}`;
+    const coverDir = join(process.cwd(), "public", "uploads", "covers");
+    await mkdir(coverDir, { recursive: true });
+    const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
+    await writeFile(join(coverDir, coverName), coverBuffer);
+    const coverUrl = `/uploads/covers/${coverName}`;
+
+    // 2. Processar o Conteúdo
+    let finalContentUrl = "";
+    if (type === 'FILE' && contentFile) {
+      const fileName = `${Date.now()}-${contentFile.name.replace(/\s/g, "_")}`;
+      const storageDir = join(process.cwd(), "storage", "books");
+      await mkdir(storageDir, { recursive: true });
+      const fileBuffer = Buffer.from(await contentFile.arrayBuffer());
+      await writeFile(join(storageDir, fileName), fileBuffer);
+      finalContentUrl = `/books/${fileName}`; // Caminho relativo para a sua API de download
+    } else {
+      finalContentUrl = contentLink;
+    }
+
+    // 3. Salvar no Banco
+    await prisma.book.create({
+      data: {
+        title,
+        category,
+        subCategory: subCategory || null,
+        type,
+        coverUrl,
+        contentUrl: finalContentUrl,
+        userId
+      }
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin/dashboard/books");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao cadastrar livro:", error);
+    return { error: "Falha ao processar o cadastro." };
+  }
+}
+
+export async function deleteBook(formData: FormData) {
+  const session = await getServerSession();
+  const user = await prisma.user.findUnique({ where: { email: session?.user?.email! } });
+  if (user?.role !== 'ADMIN') throw new Error("Sem permissão.");
+
+  const bookId = formData.get("bookId") as string;
+  const book = await prisma.book.findUnique({ where: { id: bookId } });
+  if (!book) return;
+
+  // CORREÇÃO: Limpando a barra inicial (/) para o servidor achar a pasta public e storage corretamente
+  if (book.coverUrl) {
+    const coverPath = join(process.cwd(), "public", book.coverUrl.replace(/^\//, ''));
+    try { await unlink(coverPath); } catch (e) { console.log("Capa não encontrada"); }
+  }
+  if (book.type === 'FILE' && book.contentUrl) {
+    const contentPath = join(process.cwd(), "storage", book.contentUrl.replace(/^\//, ''));
+    try { await unlink(contentPath); } catch (e) { console.log("PDF não encontrado"); }
+  }
+
+  await prisma.book.delete({ where: { id: bookId } });
+  revalidatePath("/");
+  revalidatePath("/admin/dashboard/books");
+}
+
+// --- 11. EDITAR LIVRO (APENAS TEXTOS E LINKS) ---
+export async function updateBook(formData: FormData) {
+  const session = await getServerSession();
+  const user = await prisma.user.findUnique({ where: { email: session?.user?.email! } });
+  if (user?.role !== 'ADMIN') throw new Error("Sem permissão.");
+
+  const id = formData.get("bookId") as string;
+  const title = formData.get("title") as string;
+  const category = formData.get("category") as string;
+  const subCategory = formData.get("subCategory") as string;
+  const contentLink = formData.get("contentLink") as string;
+
+  // Atualiza apenas os dados textuais para segurança. Se precisar trocar o PDF, é melhor excluir e recriar.
+  await prisma.book.update({
+    where: { id },
+    data: { 
+      title, 
+      category, 
+      subCategory: subCategory || null,
+      ...(contentLink ? { contentUrl: contentLink } : {}) 
+    }
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin/dashboard/books");
+}
