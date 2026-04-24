@@ -459,11 +459,38 @@ export async function createMaterial(formData: FormData) {
   revalidatePath("/admin/dashboard");
 }
 
+// --- 10. EXCLUIR LIVRO DO CATÁLOGO ---
+export async function deleteBook(formData: FormData) {
+  const session = await getServerSession();
+  const user = await prisma.user.findUnique({ where: { email: session?.user?.email! } });
+  if (user?.role !== 'ADMIN') throw new Error("Sem permissão.");
+
+  const bookId = formData.get("bookId") as string;
+  const book = await prisma.book.findUnique({ where: { id: bookId } });
+  if (!book) return;
+
+  // CORREÇÃO: Agora apagamos a capa da pasta STORAGE, não mais da public
+  if (book.coverUrl) {
+    const coverPath = join(process.cwd(), "storage", book.coverUrl.replace(/^\//, ''));
+    try { await unlink(coverPath); } catch (e) { console.log("Capa não encontrada no disco"); }
+  }
+  
+  if (book.type === 'FILE' && book.contentUrl) {
+    const contentPath = join(process.cwd(), "storage", book.contentUrl.replace(/^\//, ''));
+    try { await unlink(contentPath); } catch (e) { console.log("PDF não encontrado no disco"); }
+  }
+
+  await prisma.book.delete({ where: { id: bookId } });
+  revalidatePath("/");
+  revalidatePath("/admin/dashboard/books");
+}
+
+
 export async function createBook(formData: FormData) {
   const title = formData.get("title") as string;
   const category = formData.get("category") as string;
   const subCategory = formData.get("subCategory") as string;
-  const type = formData.get("type") as string; // 'FILE' ou 'LINK'
+  const type = formData.get("type") as string; 
   const userId = formData.get("userId") as string;
   
   const coverFile = formData.get("cover") as File;
@@ -471,13 +498,15 @@ export async function createBook(formData: FormData) {
   const contentLink = formData.get("contentLink") as string;
 
   try {
-    // 1. Processar a Capa (public/uploads/covers)
-    const coverName = `${Date.now()}-${coverFile.name.replace(/\s/g, "_")}`;
-    const coverDir = join(process.cwd(), "public", "uploads", "covers");
+    // 1. CORREÇÃO: Salvar a Capa na pasta 'storage/covers' e padronizar nome
+    const coverName = `${Date.now()}-capa.jpg`; 
+    const coverDir = join(process.cwd(), "storage", "covers");
     await mkdir(coverDir, { recursive: true });
     const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
     await writeFile(join(coverDir, coverName), coverBuffer);
-    const coverUrl = `/uploads/covers/${coverName}`;
+    
+    // Caminho relativo para a nossa API buscar depois
+    const coverUrl = `covers/${coverName}`;
 
     // 2. Processar o Conteúdo
     let finalContentUrl = "";
@@ -487,7 +516,7 @@ export async function createBook(formData: FormData) {
       await mkdir(storageDir, { recursive: true });
       const fileBuffer = Buffer.from(await contentFile.arrayBuffer());
       await writeFile(join(storageDir, fileName), fileBuffer);
-      finalContentUrl = `/books/${fileName}`; // Caminho relativo para a sua API de download
+      finalContentUrl = `books/${fileName}`; 
     } else {
       finalContentUrl = contentLink;
     }
@@ -495,13 +524,8 @@ export async function createBook(formData: FormData) {
     // 3. Salvar no Banco
     await prisma.book.create({
       data: {
-        title,
-        category,
-        subCategory: subCategory || null,
-        type,
-        coverUrl,
-        contentUrl: finalContentUrl,
-        userId
+        title, category, subCategory: subCategory || null, type,
+        coverUrl, contentUrl: finalContentUrl, userId
       }
     });
 
@@ -512,30 +536,6 @@ export async function createBook(formData: FormData) {
     console.error("Erro ao cadastrar livro:", error);
     return { error: "Falha ao processar o cadastro." };
   }
-}
-
-export async function deleteBook(formData: FormData) {
-  const session = await getServerSession();
-  const user = await prisma.user.findUnique({ where: { email: session?.user?.email! } });
-  if (user?.role !== 'ADMIN') throw new Error("Sem permissão.");
-
-  const bookId = formData.get("bookId") as string;
-  const book = await prisma.book.findUnique({ where: { id: bookId } });
-  if (!book) return;
-
-  // CORREÇÃO: Limpando a barra inicial (/) para o servidor achar a pasta public e storage corretamente
-  if (book.coverUrl) {
-    const coverPath = join(process.cwd(), "public", book.coverUrl.replace(/^\//, ''));
-    try { await unlink(coverPath); } catch (e) { console.log("Capa não encontrada"); }
-  }
-  if (book.type === 'FILE' && book.contentUrl) {
-    const contentPath = join(process.cwd(), "storage", book.contentUrl.replace(/^\//, ''));
-    try { await unlink(contentPath); } catch (e) { console.log("PDF não encontrado"); }
-  }
-
-  await prisma.book.delete({ where: { id: bookId } });
-  revalidatePath("/");
-  revalidatePath("/admin/dashboard/books");
 }
 
 // --- 11. EDITAR LIVRO (APENAS TEXTOS E LINKS) ---
