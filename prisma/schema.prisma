@@ -1,52 +1,42 @@
 generator client {
   provider        = "prisma-client-js"
-    previewFeatures = ["driverAdapters"]
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
-  // A linha 'url' foi removida pois já está no seu prisma.config.ts
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("USER") // "ADMIN" ou "USER"
-  
-  // Configurações da Pasta Pública
-  folderName        String?  @default("Minha Pasta") 
-  folderCategory    String?  @default("Geral")       
-  folderDescription String? 
-  
-  materials Material[] 
-  displayOrder      Int      @default(999)
-  createdAt DateTime @default(now())
+  id                String     @id @default(uuid())
+  name              String
+  email             String     @unique
+  password          String
+  role              String     @default("USER")
+  folderName        String?    @default("Minha Pasta")
+  folderCategory    String?    @default("Geral")
+  folderDescription String?
+  materials         Material[]
+  displayOrder      Int        @default(999)
+  createdAt         DateTime   @default(now())
+  books             Book[]
 
   @@map("users")
-
-  books Book[]
 }
 
 model Material {
-  id          String   @id @default(uuid())
-  title       String
-  type        String   // "FOLDER" ou extensão do arquivo (PDF, PNG...)
-  
-  fileUrl     String?  // Pode ser nulo se for uma pasta
-  size        Int      @default(0)
-  
-  // Relação de Subpastas (Auto-relacionamento)
-  parentId    String?  
-  parent      Material?  @relation("FolderHierarchy", fields: [parentId], references: [id])
-  children    Material[] @relation("FolderHierarchy")
-
-  // Dono
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
-  createdAt   DateTime @default(now())
+  id        String     @id @default(uuid())
+  title     String
+  type      String
+  fileUrl   String?
+  size      Int        @default(0)
+  parentId  String?
+  parent    Material?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children  Material[] @relation("FolderHierarchy")
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
 
   @@map("materials")
 }
@@ -63,16 +53,14 @@ model Partner {
 }
 
 model Book {
-  id            String   @id @default(uuid())
-  title         String
-  category      String   // Ex: "1º Ano", "Sistemas"
-  subCategory   String?  // Opcional. Ex: "Professor", "Aluno"
-  coverUrl      String   // Caminho onde a imagem da capa será salva
-  type          String   // Vai ser 'FILE' (arquivo anexo) ou 'LINK' (livro online)
-  contentUrl    String   // Se for FILE, salva o caminho. Se for LINK, salva a URL do site.
-  createdAt     DateTime @default(now())
-  
-  // Quem cadastrou o livro
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  title       String
+  category    String
+  subCategory String?
+  coverUrl    String
+  type        String
+  contentUrl  String
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
